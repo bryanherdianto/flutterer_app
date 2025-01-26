@@ -21,6 +21,7 @@ class _TopPageState extends State<TopPage> {
 
   int pageIndex = 0;
 
+  final title = ['Home', 'Files', 'Tools', 'Me'];
   final pages = [
     const HomePage(),
     const FilesPage(),
@@ -33,7 +34,7 @@ class _TopPageState extends State<TopPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Home', style: TextStyle(color: Colors.white)),
+        title: Text(title[pageIndex], style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: Colors.purple[900],
         actions: [
           IconButton(
