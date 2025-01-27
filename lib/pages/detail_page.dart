@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
+import 'package:flutterer_app/pages/face_detection_page.dart';
+import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'dart:io';
 
 class DetailPage extends StatefulWidget {
@@ -18,8 +20,15 @@ class _DetailPageState extends State<DetailPage> {
   var imageFile;
   bool isImageLoaded = false;
 
-  getImageFromGallery() async {
+  List<Rect> rect = List<Rect>.empty(growable: true);
+
+  Future getImageFromGallery() async {
     var tempStore = await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (tempStore != null) {
+      imageFile = await tempStore.readAsBytes();
+    }
+    imageFile = await decodeImageFromList(imageFile);
 
     setState(() {
       pickedImage = File(tempStore!.path);
@@ -27,17 +36,112 @@ class _DetailPageState extends State<DetailPage> {
     });
   }
 
-  readTextFromImage() async {
+  Future readTextFromImage() async {
+    resultText = "";
+
     final inputImage = InputImage.fromFile(pickedImage);
     final textDetector = GoogleMlKit.vision.textRecognizer();
     final recognisedText = await textDetector.processImage(inputImage);
-    await textDetector.close();
 
-    resultText = recognisedText.text;
+    for (TextBlock block in recognisedText.blocks) {
+      for (TextLine line in block.lines) {
+        for (TextElement element in line.elements) {
+          setState(() {
+            resultText += '${element.text} ';
+          });
+        }
+      }
+    }
+  }
 
-    setState(() {
-      print(resultText);
-    });
+  Future decodeBarCode() async {
+    resultText = "";
+
+    final inputImage = InputImage.fromFile(pickedImage);
+    final barcodeScanner = GoogleMlKit.vision.barcodeScanner();
+    final barcodes = await barcodeScanner.processImage(inputImage);
+
+    for (Barcode barcode in barcodes) {
+      final type = barcode.type;
+      final displayValue = barcode.displayValue;
+
+      setState(() {
+        resultText += '$type : $displayValue\n';
+      });
+    }
+  }
+
+  Future labelsReader() async {
+    resultText = "";
+
+    final inputImage = InputImage.fromFile(pickedImage);
+    final imageLabeler = GoogleMlKit.vision.imageLabeler();
+    final labels = await imageLabeler.processImage(inputImage);
+
+    for (ImageLabel label in labels) {
+      final text = label.label;
+      final confidence = label.confidence;
+
+      setState(() {
+        resultText += '$text : ${confidence.toStringAsFixed(2)}\n';
+      });
+    }
+  }
+
+  Future detectFaces() async {
+    print(pickedImage);
+    final inputImage = InputImage.fromFile(pickedImage);
+    final faceDetector = GoogleMlKit.vision.faceDetector();
+    final faces = await faceDetector.processImage(inputImage);
+
+    if (rect.isNotEmpty) {
+      rect.clear();
+    }
+
+    for (Face face in faces) {
+      rect.add(face.boundingBox);
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FaceDetectionPage(
+          imageFile: imageFile,
+          rect: rect,
+        ),
+      ),
+    );
+  }
+
+  List<String> _pictures = [];
+
+  Future<void> scanDocument() async {
+    List<String> pictures;
+    try {
+      pictures = await CunningDocumentScanner.getPictures() ?? [];
+      if (!mounted) return;
+      setState(() {
+        _pictures = pictures;
+        pickedImage = File(_pictures.last);
+        isImageLoaded = true;
+      });
+      imageFile = await File(pictures.last).readAsBytes();
+      imageFile = await decodeImageFromList(imageFile);
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  void detectMLModel() {
+    if (selectedTool == "Text Scanner") {
+      readTextFromImage();
+    } else if (selectedTool == "Barcode Scanner") {
+      decodeBarCode();
+    } else if (selectedTool == "Label Scanner") {
+      labelsReader();
+    } else if (selectedTool == "Face Detection") {
+      detectFaces();
+    }
   }
 
   @override
@@ -70,7 +174,7 @@ class _DetailPageState extends State<DetailPage> {
                 ],
               ).then((value) {
                 if (value == 'Use Camera') {
-                  // Handle camera action
+                  scanDocument();
                 } else if (value == 'Get from Gallery') {
                   getImageFromGallery();
                 }
@@ -83,30 +187,29 @@ class _DetailPageState extends State<DetailPage> {
       body: Column(
         children: [
           const SizedBox(
-            height: 50,
+            height: 30,
           ),
           isImageLoaded
               ? Center(
-                child: Container(
-                  width: 300,
-                  height: 300,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: FileImage(pickedImage),
-                      fit: BoxFit.contain,
-                    ),
-                  )
-                ),
-              )
+                  child: Container(
+                      width: 300,
+                      height: 300,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: FileImage(pickedImage),
+                          fit: BoxFit.contain,
+                        ),
+                      )),
+                )
               : Container(),
-          const SizedBox(
-            height: 20,
-          ),
+          Padding(
+              padding: const EdgeInsets.all(15.0),
+              child: Text(resultText, style: const TextStyle(fontSize: 20)))
         ],
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.purple[900],
-        onPressed: readTextFromImage,
+        onPressed: detectMLModel,
         child: const Icon(Icons.check, color: Colors.white),
       ),
     );
