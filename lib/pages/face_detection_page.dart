@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
 import 'dart:io';
@@ -21,11 +22,11 @@ class FaceDetectionPage extends StatefulWidget {
 
 class _FaceDetectionPageState extends State<FaceDetectionPage> {
   final GlobalKey _repaintBoundaryKey = GlobalKey();
-  bool isUploading = false; // Track the upload state
+  bool isUploading = false;
 
   Future<void> uploadImage(BuildContext context) async {
     setState(() {
-      isUploading = true; // Start the upload process
+      isUploading = true;
     });
 
     try {
@@ -63,7 +64,7 @@ class _FaceDetectionPageState extends State<FaceDetectionPage> {
       ));
     } finally {
       setState(() {
-        isUploading = false; // Reset the upload state
+        isUploading = false;
       });
     }
   }
@@ -79,6 +80,34 @@ class _FaceDetectionPageState extends State<FaceDetectionPage> {
     } catch (e) {
       print("Error converting CustomPaint to Image: $e");
       rethrow;
+    }
+  }
+
+  Future<void> shareFile(ui.Image image) async {
+    try {
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final buffer = byteData!.buffer.asUint8List();
+
+      final compressedBytes = await FlutterImageCompress.compressWithList(
+        buffer,
+        minWidth: 800,
+        minHeight: 800,
+        quality: 85,
+        format: CompressFormat.png,
+      );
+
+      final tempDir = Directory.systemTemp.path;
+      final file =
+          await File('$tempDir/temp_image.png').writeAsBytes(compressedBytes);
+
+      await Share.shareXFiles([XFile(file.path)],
+          text: 'Check out this face-detected image!');
+    } catch (e) {
+      print("Error sharing file: $e");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Failed to share the file"),
+        duration: Duration(seconds: 2),
+      ));
     }
   }
 
@@ -115,31 +144,32 @@ class _FaceDetectionPageState extends State<FaceDetectionPage> {
       floatingActionButton: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Upload button
           FloatingActionButton(
             heroTag: "upload",
             backgroundColor: Colors.purple[900],
             onPressed: () => uploadImage(context),
             child: isUploading
                 ? const SizedBox(
-                    width:
-                        24.0, // Adjust width of the CircularProgressIndicator
-                    height:
-                        24.0, // Adjust height of the CircularProgressIndicator
+                    width: 24.0,
+                    height: 24.0,
                     child: CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      strokeWidth:
-                          2.0, // You can adjust strokeWidth to make the progress thinner or thicker
+                      strokeWidth: 2.0,
                     ),
                   )
                 : const Icon(Icons.save_alt, color: Colors.white),
           ),
           const SizedBox(width: 10),
-          // Share button (you can implement the share functionality as needed)
           FloatingActionButton(
             heroTag: "share",
             backgroundColor: Colors.purple[900],
-            onPressed: () {},
+            onPressed: () async {
+              if (widget.imageFile != null) {
+                final image =
+                    await convertCustomPaintToImage(_repaintBoundaryKey);
+                shareFile(image);
+              }
+            },
             child: const Icon(Icons.share, color: Colors.white),
           ),
         ],

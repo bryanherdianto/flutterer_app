@@ -76,21 +76,17 @@ class _FilesPageState extends State<FilesPage> {
 
   Future<void> shareFile(String fileName) async {
     try {
-      // Step 1: Get the public URL for the file
       final imageUrl = _supabaseClient.storage
           .from('images')
           .getPublicUrl('uploads/$fileName');
 
-      // Step 2: Download the file using the HTTP package
       final response = await http.get(Uri.parse(imageUrl));
 
       if (response.statusCode == 200) {
-        // Step 3: Save the file locally using path_provider
         final directory = Directory.systemTemp.path;
         final file = File('$directory/$fileName');
         await file.writeAsBytes(response.bodyBytes);
 
-        // Step 4: Use the share_plus package to share the file
         await Share.shareXFiles([XFile(file.path)], text: 'Check out this file!');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
