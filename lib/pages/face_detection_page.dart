@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
+import 'dart:io';
 
-class FaceDetectionPage extends StatelessWidget {
+class FaceDetectionPage extends StatefulWidget {
   final List<Rect> rect;
   final ui.Image? imageFile;
 
@@ -10,6 +14,73 @@ class FaceDetectionPage extends StatelessWidget {
     required this.rect,
     required this.imageFile,
   });
+
+  @override
+  State<FaceDetectionPage> createState() => _FaceDetectionPageState();
+}
+
+class _FaceDetectionPageState extends State<FaceDetectionPage> {
+  final GlobalKey _repaintBoundaryKey = GlobalKey();
+  bool isUploading = false; // Track the upload state
+
+  Future<void> uploadImage(BuildContext context) async {
+    setState(() {
+      isUploading = true; // Start the upload process
+    });
+
+    try {
+      final ui.Image customImage =
+          await convertCustomPaintToImage(_repaintBoundaryKey);
+
+      final filename = DateTime.now().millisecondsSinceEpoch.toString();
+      final byteData =
+          await customImage.toByteData(format: ui.ImageByteFormat.png);
+      final buffer = byteData!.buffer.asUint8List();
+
+      final compressedBytes = await FlutterImageCompress.compressWithList(
+        buffer,
+        minWidth: 800,
+        minHeight: 800,
+        quality: 85,
+        format: CompressFormat.png,
+      );
+
+      final tempDir = Directory.systemTemp.path;
+      final file =
+          await File("$tempDir/$filename").writeAsBytes(compressedBytes);
+
+      final path = "uploads/$filename";
+      await Supabase.instance.client.storage.from('images').upload(path, file);
+
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Image uploaded successfully"),
+        duration: Duration(seconds: 2),
+      ));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Failed to upload image"),
+        duration: Duration(seconds: 2),
+      ));
+    } finally {
+      setState(() {
+        isUploading = false; // Reset the upload state
+      });
+    }
+  }
+
+  Future<ui.Image> convertCustomPaintToImage(GlobalKey key) async {
+    try {
+      final boundary =
+          key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) {
+        throw Exception("RepaintBoundary not found!");
+      }
+      return await boundary.toImage(pixelRatio: 3.0);
+    } catch (e) {
+      print("Error converting CustomPaint to Image: $e");
+      rethrow;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,23 +95,54 @@ class FaceDetectionPage extends StatelessWidget {
       ),
       backgroundColor: Colors.white,
       body: Center(
-        child: imageFile != null
+        child: widget.imageFile != null
             ? FittedBox(
                 fit: BoxFit.contain,
                 child: SizedBox(
-                  width: imageFile!.width.toDouble(),
-                  height: imageFile!.height.toDouble(),
-                  child: CustomPaint(
-                    painter: FacePainter(rect: rect, imageFile: imageFile!),
+                  width: widget.imageFile!.width.toDouble(),
+                  height: widget.imageFile!.height.toDouble(),
+                  child: RepaintBoundary(
+                    key: _repaintBoundaryKey,
+                    child: CustomPaint(
+                      painter: FacePainter(
+                          rect: widget.rect, imageFile: widget.imageFile!),
+                    ),
                   ),
                 ),
               )
             : const Center(child: Text("No image loaded")),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.purple[900],
-        onPressed: () {},
-        child: const Icon(Icons.save_alt, color: Colors.white),
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Upload button
+          FloatingActionButton(
+            heroTag: "upload",
+            backgroundColor: Colors.purple[900],
+            onPressed: () => uploadImage(context),
+            child: isUploading
+                ? const SizedBox(
+                    width:
+                        24.0, // Adjust width of the CircularProgressIndicator
+                    height:
+                        24.0, // Adjust height of the CircularProgressIndicator
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth:
+                          2.0, // You can adjust strokeWidth to make the progress thinner or thicker
+                    ),
+                  )
+                : const Icon(Icons.save_alt, color: Colors.white),
+          ),
+          const SizedBox(width: 10),
+          // Share button (you can implement the share functionality as needed)
+          FloatingActionButton(
+            heroTag: "share",
+            backgroundColor: Colors.purple[900],
+            onPressed: () {},
+            child: const Icon(Icons.share, color: Colors.white),
+          ),
+        ],
       ),
     );
   }

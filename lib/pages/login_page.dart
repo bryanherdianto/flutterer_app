@@ -87,17 +87,18 @@ class _LoginPageState extends State<LoginPage> {
             child: Center(
               child: Column(
                 children: [
-                  const SizedBox(height: 50), // Useful for giving space
+                  const SizedBox(height: 20), // Useful for giving space
 
-                  const Icon(
+                  Icon(
                     Icons.flutter_dash,
-                    size: 100,
+                    size: 130,
+                    color: Colors.purple[900],
                   ),
 
                   const SizedBox(height: 30),
 
                   const Text('Welcome to Flutterer!',
-                      style: TextStyle(fontSize: 20)),
+                      style: TextStyle(fontSize: 25, fontFamily: 'Roboto')),
 
                   const SizedBox(height: 20),
 
@@ -131,10 +132,10 @@ class _LoginPageState extends State<LoginPage> {
                                         builder: (context) =>
                                             const ForgotPassPage()));
                               },
-                              child: const Text(
+                              child: Text(
                                 "Forgot Password?",
                                 style: TextStyle(
-                                    color: Colors.blue,
+                                    color: Colors.purple[900],
                                     fontWeight: FontWeight.bold),
                               ),
                             )
@@ -185,10 +186,10 @@ class _LoginPageState extends State<LoginPage> {
                           style: TextStyle(color: Colors.grey[600])),
                       TextButton(
                         onPressed: widget.onPressed,
-                        child: const Text(
+                        child: Text(
                           "Register",
                           style: TextStyle(
-                              color: Colors.blue, fontWeight: FontWeight.bold),
+                              color: Colors.purple[900], fontWeight: FontWeight.bold),
                         ),
                       )
                     ],

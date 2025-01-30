@@ -21,24 +21,41 @@ class _TopPageState extends State<TopPage> {
 
   int pageIndex = 0;
 
+  void changePage(int index) {
+    setState(() {
+      pageIndex = index;
+    });
+  }
+
   final title = ['Home', 'Files', 'Tools', 'Me'];
-  final pages = [
-    const HomePage(),
-    const FilesPage(),
-    const ToolsPage(),
-    const MePage(),
-  ];
+  late List<Widget> pages;
+
+  @override
+  void initState() {
+    super.initState();
+    pages = [
+      HomePage(onPressed: changePage),
+      const FilesPage(),
+      const ToolsPage(),
+      const MePage(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(title[pageIndex], style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        backgroundColor: Colors.purple[900],
+        title: Text(title[pageIndex],
+            style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 35,
+                fontWeight: FontWeight.bold,
+                color: Colors.purple[900])),
+        backgroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
+            icon: Icon(Icons.logout, color: Colors.purple[900]),
             onPressed: signUserOut,
           ),
         ],
@@ -51,85 +68,69 @@ class _TopPageState extends State<TopPage> {
   Container myNavigationBar(BuildContext context) {
     return Container(
       height: 60,
-      decoration: BoxDecoration(
-        color: Colors.purple[900],
+      decoration: const BoxDecoration(
+        color: Colors.white,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           IconButton(
             enableFeedback: false,
-            onPressed: () {
-              setState(() {
-                pageIndex = 0;
-              });
-            },
+            onPressed: () => changePage(0),
             icon: pageIndex == 0
-                ? const Icon(
+                ? Icon(
                     Icons.home,
-                    color: Colors.white,
+                    color: Colors.purple[900],
                     size: 35,
                   )
-                : const Icon(
+                : Icon(
                     Icons.home_outlined,
-                    color: Colors.white,
+                    color: Colors.purple[900],
                     size: 35,
                   ),
           ),
           IconButton(
             enableFeedback: false,
-            onPressed: () {
-              setState(() {
-                pageIndex = 1;
-              });
-            },
+            onPressed: () => changePage(1),
             icon: pageIndex == 1
-                ? const Icon(
+                ? Icon(
                     Icons.work_rounded,
-                    color: Colors.white,
+                    color: Colors.purple[900],
                     size: 35,
                   )
-                : const Icon(
+                : Icon(
                     Icons.work_outline_outlined,
-                    color: Colors.white,
+                    color: Colors.purple[900],
                     size: 35,
                   ),
           ),
           IconButton(
             enableFeedback: false,
-            onPressed: () {
-              setState(() {
-                pageIndex = 2;
-              });
-            },
+            onPressed: () => changePage(2),
             icon: pageIndex == 2
-                ? const Icon(
+                ? Icon(
                     Icons.widgets_rounded,
-                    color: Colors.white,
+                    color: Colors.purple[900],
                     size: 35,
                   )
-                : const Icon(
+                : Icon(
                     Icons.widgets_outlined,
-                    color: Colors.white,
+                    color: Colors.purple[900],
                     size: 35,
                   ),
           ),
           IconButton(
             enableFeedback: false,
-            onPressed: () {
-              setState(() {
-                pageIndex = 3;
-              });
-            },
+            onPressed: () => changePage(3),
             icon: pageIndex == 3
-                ? const Icon(
+                ? Icon(
                     Icons.person,
-                    color: Colors.white,
+                    color: Colors.purple[900],
                     size: 35,
                   )
-                : const Icon(
+                : Icon(
                     Icons.person_outline,
-                    color: Colors.white,
+                    color: Colors.purple[900],
                     size: 35,
                   ),
           ),

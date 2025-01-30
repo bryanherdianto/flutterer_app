@@ -26,6 +26,7 @@ class MyButton extends StatelessWidget {
           child: Text(message,
               style: const TextStyle(
                 color: Colors.white,
+                fontFamily: 'Roboto',
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               )),

@@ -94,17 +94,18 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Center(
               child: Column(
                 children: [
-                  const SizedBox(height: 50), // Useful for giving space
+                  const SizedBox(height: 20), // Useful for giving space
 
-                  const Icon(
+                  Icon(
                     Icons.flutter_dash,
-                    size: 100,
+                    size: 130,
+                    color: Colors.purple[900],
                   ),
 
                   const SizedBox(height: 30),
 
                   const Text('Let\'s get started with Flutterer!',
-                      style: TextStyle(fontSize: 20)),
+                      style: TextStyle(fontSize: 25)),
 
                   const SizedBox(height: 20),
 
@@ -175,10 +176,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           style: TextStyle(color: Colors.grey[600])),
                       TextButton(
                         onPressed: widget.onPressed,
-                        child: const Text(
+                        child: Text(
                           "Login",
                           style: TextStyle(
-                              color: Colors.blue, fontWeight: FontWeight.bold),
+                              color: Colors.purple[900], fontWeight: FontWeight.bold),
                         ),
                       )
                     ],
